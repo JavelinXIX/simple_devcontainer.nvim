@@ -1,11 +1,11 @@
--- lua/devcotainer.lua
+-- lua/devcontainer.lua
 local M = {}
 
 -- プラグイン自身のルートディレクトリを取得
 local function plugin_root()
-  -- このファイル（devcotainer.lua）の絶対パスを取得
+  -- このファイル（devcontainer.lua）の絶対パスを取得
   local source = debug.getinfo(1, "S").source:sub(2)
-  -- "/path/to/devcotainer.nvim/lua/devcotainer.lua" → "/path/to/devcotainer.nvim"
+  -- "/path/to/devcontainer.nvim/lua/devcontainer.lua" → "/path/to/devcontainer.nvim"
   return vim.fn.fnamemodify(source, ":p:h:h")
 end
 
@@ -98,7 +98,7 @@ end
 
 -- コマンド定義＋補完設定
 function M.setup()
-  vim.api.nvim_create_user_command("devcotainer", function(opts)
+  vim.api.nvim_create_user_command("devcontainer", function(opts)
     local args = vim.split(opts.args, "%s+")
     if args[1] == "run"  and #args >= 3 then
       M.run(args[2], args[3])
@@ -107,8 +107,8 @@ function M.setup()
     else
       vim.api.nvim_err_writeln(
         "Usage:\n" ..
-        "  :devcotainer run <コンテナ名> <テンプレート名>\n" ..
-        "  :devcotainer start <コンテナ名>"
+        "  :devcontainer run <コンテナ名> <テンプレート名>\n" ..
+        "  :devcontainer start <コンテナ名>"
       )
     end
   end, {
