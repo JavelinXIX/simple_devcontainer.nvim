@@ -27,9 +27,9 @@ local function list_templates()
   end
 
   -- プロジェクト内優先
-  scan(vim.fn.getcwd() .. "/template")
+  scan(vim.fn.getcwd() .. "/templates")
   -- プラグイン内フォールバック
-  scan(plugin_root() .. "/template")
+  scan(plugin_root() .. "/templates")
 
   return tmpl
 end
