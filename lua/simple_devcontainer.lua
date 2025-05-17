@@ -98,7 +98,7 @@ end
 
 -- コマンド定義＋補完設定
 function M.setup()
-  vim.api.nvim_create_user_command("devcontainer", function(opts)
+  vim.api.nvim_create_user_command("Devcontainer", function(opts)
     local args = vim.split(opts.args, "%s+")
     if args[1] == "run"  and #args >= 3 then
       M.run(args[2], args[3])
