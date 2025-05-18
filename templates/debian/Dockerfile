@@ -1,4 +1,3 @@
 FROM debian:trixie-slim
 
-RUN apt-get update &&
-    apt-get upgrade 
+RUN apt-get -y update && apt-get -y upgrade 
