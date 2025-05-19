@@ -111,7 +111,11 @@ function M.run(container, template)
         template,
         "/bin/bash"
       }, " ")
-      Terminal:new({ cmd = cmd, hidden = false }):toggle()
+      Terminal:new({
+        cmd = cmd,
+        hidden = true, 
+        close_on_exit = false, 
+      }):toggle()
     end,
   })
 end
