@@ -31,11 +31,17 @@ function M.setup(opts)
       M.run(args[2], args[3])
     elseif args[1] == "start" and #args >= 2 then
       M.start(args[2])
+    elseif args[1] == "stop"  and #args >= 2 then
+      M.stop(args[2])
+    elseif args[1] == "rm"    and #args >= 2 then
+      M.rm(args[2])
     else
       vim.api.nvim_err_writeln(
         "Usage:\n" ..
         "  :Devcontainer run <コンテナ名> <テンプレート名>\n" ..
-        "  :Devcontainer start <コンテナ名>"
+        "  :Devcontainer start <コンテナ名>\n" ..
+        "  :Devcontainer stop <コンテナ名>\n" ..
+        "  :Devcontainer rm <コンテナ名>"
       )
     end
   end, {
@@ -43,10 +49,10 @@ function M.setup(opts)
     complete = function(_, cmdline)
       local parts = vim.split(cmdline, "%s+")
       if #parts == 2 then
-        return { "run", "start" }
+        return { "run", "start", "stop", "rm" }
       elseif #parts == 3 and parts[2] == "run" then
         return list_templates()
-      elseif #parts == 3 and parts[2] == "start" then
+      elseif #parts == 3 and (parts[2] == "start" or parts[2] == "stop" or parts[2] == "rm") then
         return vim.fn.systemlist("docker ps -a --format '{{.Names}}'")
       end
       return {}
@@ -68,7 +74,6 @@ local function list_templates()
       end
     end
   end
-  -- 重複を除去して返す
   return vim.fn.uniq(tmpl)
 end
 
@@ -88,7 +93,7 @@ function M.run(container, template)
     return vim.api.nvim_err_writeln("Template not found: " .. template)
   end
 
-  -- ビルドログを溜める
+  -- ビルドログを溜めて、失敗時のみ表示
   local build_logs = {}
   vim.fn.jobstart({ "docker", "build", "-f", df, "-t", template, dir }, {
     stdout_buffered = true,
@@ -111,7 +116,7 @@ function M.run(container, template)
         template,
         "/bin/bash"
       }, " ")
-      Terminal:new({ cmd = cmd, hidden = true }):toggle()
+      Terminal:new({ cmd = cmd, hidden = true, close_on_exit = false }):toggle()
     end,
   })
 end
@@ -126,7 +131,44 @@ function M.start(container)
     "docker", "start", container, "&&",
     "docker", "exec", "-it", container, "/bin/sh"
   }, " ")
-  Terminal:new({ cmd = cmd, hidden = true }):toggle()
+  Terminal:new({ cmd = cmd, hidden = true, close_on_exit = false }):toggle()
+end
+
+-- :Devcontainer stop コマンド
+function M.stop(container)
+  if container == "" then
+    return vim.api.nvim_err_writeln("コンテナ名を指定してください")
+  end
+  local out = vim.fn.system({ "docker", "stop", container })
+  if vim.v.shell_error ~= 0 then
+    return vim.api.nvim_err_writeln("コンテナ停止に失敗しました: " .. container)
+  end
+  vim.api.nvim_out_write("コンテナを停止しました: " .. container .. "\n")
+end
+
+-- :Devcontainer rm コマンド
+function M.rm(container)
+  if container == "" then
+    return vim.api.nvim_err_writeln("コンテナ名を指定してください")
+  end
+  -- 存在チェック & 実行状態取得
+  local state = vim.fn.systemlist({ "docker", "inspect", "-f", "{{.State.Running}}", container })
+  if vim.v.shell_error ~= 0 then
+    return vim.api.nvim_err_writeln("コンテナが見つかりません: " .. container)
+  end
+  -- もし実行中なら停止
+  if state[1] == "true" then
+    vim.fn.system({ "docker", "stop", container })
+    if vim.v.shell_error ~= 0 then
+      return vim.api.nvim_err_writeln("コンテナ停止に失敗しました: " .. container)
+    end
+  end
+  -- 削除
+  vim.fn.system({ "docker", "rm", container })
+  if vim.v.shell_error ~= 0 then
+    return vim.api.nvim_err_writeln("コンテナ削除に失敗しました: " .. container)
+  end
+  vim.api.nvim_out_write("コンテナを削除しました: " .. container .. "\n")
 end
 
 return M
